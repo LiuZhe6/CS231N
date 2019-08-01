@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from past.builtins import xrange
 
+
 class TwoLayerNet(object):
     """
     A two-layer fully-connected neural network. The net has an input dimension of
@@ -79,7 +80,10 @@ class TwoLayerNet(object):
         # shape (N, C).                                                             #
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
+        # h1->(N,H)
+        h1 = np.maximum(0, X.dot(W1) + b1)
+        # scores ->(N,C)
+        scores = h1.dot(W2) + b2
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -98,6 +102,15 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+        # 求指数 (N,C)
+        exp_scores = np.exp(scores)
+        # 求和，变为 (N,1)
+        row_sum = np.sum(exp_scores, axis=1).reshape(N, 1)
+        norm_scores = exp_scores / row_sum
+        data_loss = - 1 / N * np.sum(np.log(norm_scores[np.arange(N), y]))
+        reg_loss = 0.5 * reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
+        loss = data_loss + reg_loss
+
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -110,6 +123,19 @@ class TwoLayerNet(object):
         # grads['W1'] should store the gradient on W1, and be a matrix of same size #
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+        dscores = norm_scores.copy()
+        dscores[range(N), y] -= 1
+        dscores /= N  # (N,C)
+        db2 = np.sum(dscores, axis=0)  # (C,)
+        dh1 = dscores.dot(W2.T)  # (N,H)
+        dW2 = h1.T.dot(dscores) + reg * W2  # (H,C)
+        dRelu = (h1 > 0) * dh1  # (N,H)
+        dW1 = X.T.dot(dRelu) + reg * W1  # (D,H)
+        db1 = np.sum(dRelu, axis=0)  # (H,)
+        grads['b2'] = db2
+        grads['W2'] = dW2
+        grads['W1'] = dW1
+        grads['b1'] = db1
 
         pass
 
@@ -155,7 +181,9 @@ class TwoLayerNet(object):
             # them in X_batch and y_batch respectively.                             #
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
+            idx = np.random.choice(num_train, batch_size, replace=True)
+            X_batch = X[idx, :]
+            y_batch = y[idx]
             pass
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -171,7 +199,10 @@ class TwoLayerNet(object):
             # stored in the grads dictionary defined above.                         #
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
+            self.params['W2'] += -learning_rate * grads['W2']
+            self.params['b2'] += -learning_rate * grads['b2']
+            self.params['W1'] += -learning_rate * grads['W1']
+            self.params['b1'] += -learning_rate * grads['b1']
             pass
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -191,9 +222,9 @@ class TwoLayerNet(object):
                 learning_rate *= learning_rate_decay
 
         return {
-          'loss_history': loss_history,
-          'train_acc_history': train_acc_history,
-          'val_acc_history': val_acc_history,
+            'loss_history': loss_history,
+            'train_acc_history': train_acc_history,
+            'val_acc_history': val_acc_history,
         }
 
     def predict(self, X):
@@ -217,7 +248,8 @@ class TwoLayerNet(object):
         # TODO: Implement this function; it should be VERY simple!                #
         ###########################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
+        scores = self.loss(X)
+        y_pred = np.argmax(scores, axis=1)
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****

@@ -32,6 +32,23 @@ def softmax_loss_naive(W, X, y, reg):
     # regularization!                                                           #
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+    num_train = X.shape[0]
+    num_class = W.shape[1]
+    for i in range(num_train):
+        score = X[i].dot(W)
+        score -= np.max(score)  # 提高计算中的数值稳定性
+        correct_score = score[y[i]]  # 取分类正确的评分值
+        exp_sum = np.sum(np.exp(score))
+        loss += np.log(exp_sum) - correct_score
+        for j in xrange(num_class):
+            if j == y[i]:
+                dW[:, j] += np.exp(score[j]) / exp_sum * X[i] - X[i]
+            else:
+                dW[:, j] += np.exp(score[j]) / exp_sum * X[i]
+    loss /= num_train
+    loss += 0.5 * reg * np.sum(W * W)
+    dW /= num_train
+    dW += reg * W
 
     pass
 
@@ -57,6 +74,28 @@ def softmax_loss_vectorized(W, X, y, reg):
     # regularization!                                                           #
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+    num_train = X.shape[0]
+
+    score = X.dot(W)
+    # axis = 1每一行的最大值，score仍为500*10
+    score -= np.max(score,axis=1)[:,np.newaxis]
+    # correct_score变为500 * 1
+    correct_score = score[range(num_train), y]
+    exp_score = np.exp(score)
+    # sum_exp_score维度为500*1
+    sum_exp_score = np.sum(exp_score,axis=1)
+    # 计算loss
+    loss = np.sum(np.log(sum_exp_score) - correct_score)
+    loss /= num_train
+    loss += 0.5 * reg * np.sum(W * W)
+
+    # 计算梯度
+    margin = np.exp(score) / sum_exp_score.reshape(num_train,1)
+    margin[np.arange(num_train), y] += -1
+    dW = X.T.dot(margin)
+    dW /= num_train
+    dW += reg * W
+
 
     pass
 

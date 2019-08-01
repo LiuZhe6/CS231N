@@ -26,7 +26,9 @@ def extract_features(imgs, feature_fns, verbose=False):
     An array of shape (N, F_1 + ... + F_k) where each column is the concatenation
     of all features for a single image.
     """
+    # 图片数量
     num_images = imgs.shape[0]
+
     if num_images == 0:
         return np.array([])
 
