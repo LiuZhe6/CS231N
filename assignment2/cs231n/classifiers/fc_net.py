@@ -294,6 +294,7 @@ class FullyConnectedNet(object):
                 elif self.normalization == 'layernorm':
                     scores, ln_cache = layernorm_forward(scores, self.params['gamma' + str(i + 1)],
                                                          self.params['beta' + str(i + 1)], self.bn_params[i])
+                    cache.append(ln_cache)
                 pass
 
             scores, relu_cache = relu_forward(scores)
